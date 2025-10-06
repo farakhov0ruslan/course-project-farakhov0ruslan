@@ -1,7 +1,24 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 
-app = FastAPI(title="SecDev Course App", version="0.1.0")
+from app.routers import notes as notes_api
+from app.routers import tags as tags_api
+from infrastructure.db import init_db
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+    yield
+
+
+app = FastAPI(title="Study Notes API", version="0.1.0", lifespan=lifespan)
+
+
+app.include_router(notes_api.router)
+app.include_router(tags_api.router)
 
 
 class ApiError(Exception):
