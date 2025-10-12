@@ -26,6 +26,6 @@
 
 ### Легенда
 
-* **S** Spoofing, **T** Tampering, **R** Repudiation, **I** Information Disclosure, **D** Denial of Service, **E** Elevation of Privilege. Классическая классификация STRIDE (Microsoft). ([Википедия][3])
-* Для ошибок — «Problem Details for HTTP APIs» (RFC 7807, обновлённый RFC 9457). ([datatracker.ietf.org][2])
-* Методика OWASP: декомпозиция → угрозы/оценка → митигации → верификация; учёт trust boundaries и точек входа/выхода. ([OWASP Cheat Sheet Series][1])
+* **S** Spoofing, **T** Tampering, **R** Repudiation, **I** Information Disclosure, **D** Denial of Service, **E** Elevation of Privilege.
+* Для ошибок — «Problem Details for HTTP APIs» (RFC 7807, обновлённый RFC 9457).
+* Методика OWASP: декомпозиция → угрозы/оценка → митигации → верификация; учёт trust boundaries и точек входа/выхода.
