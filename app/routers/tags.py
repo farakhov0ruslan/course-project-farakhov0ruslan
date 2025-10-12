@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from core.schemas import TagCreate, TagRead
 from infrastructure.db import session_scope
@@ -15,8 +15,12 @@ def get_repo():
 
 
 @router.get("/", response_model=List[TagRead])
-def list_tags(repo: TagsRepository = Depends(get_repo)):
-    return [TagRead.model_validate(t) for t in repo.list()]
+def list_tags(
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    repo: TagsRepository = Depends(get_repo),
+):
+    return [TagRead.model_validate(t) for t in repo.list(limit=limit, offset=offset)]
 
 
 @router.post("/", response_model=TagRead, status_code=201)

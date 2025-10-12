@@ -11,8 +11,8 @@ class TagsRepository:
 
         self.session = session
 
-    def list(self) -> List[Tag]:
-        return svc.list_tags(self.session)
+    def list(self, limit: int, offset: int) -> List[Tag]:
+        return svc.list_tags(self.session, limit, offset)
 
     def create(self, name: str) -> Tag:
         return svc.create_tag(self.session, name)

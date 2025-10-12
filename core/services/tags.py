@@ -5,8 +5,9 @@ from sqlmodel import Session, select
 from core.models import Tag
 
 
-def list_tags(session: Session) -> List[Tag]:
-    return list(session.exec(select(Tag).order_by(Tag.name)).all())
+def list_tags(session: Session, limit: int, offset: int) -> List[Tag]:
+    stmt = select(Tag).order_by(Tag.name).offset(offset).limit(limit)
+    return session.exec(stmt).all()
 
 
 def create_tag(session: Session, name: str) -> Tag:
