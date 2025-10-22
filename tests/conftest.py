@@ -1,4 +1,3 @@
-# tests/conftest.py
 import os
 import sys
 from pathlib import Path
@@ -18,6 +17,36 @@ def test_db_url(tmp_path_factory):
     url = f"sqlite:///{db_file}"
     os.environ["DATABASE_URL"] = url
     return url
+
+
+@pytest.fixture()
+def log_capture():
+    import io
+    import json
+    import logging
+
+    from utils_library.logger import JsonFormatter
+
+    stream = io.StringIO()
+    handler = logging.StreamHandler(stream)
+    handler.setFormatter(JsonFormatter())
+
+    root = logging.getLogger()
+    prev_level = root.level
+    root.addHandler(handler)
+    root.setLevel(logging.INFO)
+
+    def read_last_json():
+        handler.flush()
+        data = stream.getvalue().strip().splitlines()
+        assert data, "no log lines captured"
+        return json.loads(data[-1])
+
+    try:
+        yield read_last_json
+    finally:
+        root.removeHandler(handler)
+        root.setLevel(prev_level)
 
 
 @pytest.fixture(scope="session")
