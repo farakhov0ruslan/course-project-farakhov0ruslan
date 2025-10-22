@@ -72,11 +72,12 @@ jobs:
       - name: safety (non-blocking)
         run: safety check --full-report --json > safety.json || true
 
-      - name: Install CycloneDX CLI (Python)
-        run: python -m pip install --upgrade cyclonedx-bom
-
-      - name: Generate SBOM (CycloneDX)
-        run: python -m cyclonedx_py -e -o sbom.cdx.json
+      - name: Generate SBOM (CycloneDX from active env)
+        run: |
+          python -m pip install --upgrade cyclonedx-bom
+          python -m cyclonedx_py environment \
+            -o sbom.cdx.json \
+            --output-format json
 
       - name: Upload SCA artifacts
         if: always()
