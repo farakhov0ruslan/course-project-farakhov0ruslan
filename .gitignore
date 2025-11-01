@@ -15,3 +15,10 @@ build/
 # OS
 .DS_Store
 *.db
+deploy/vault/ROLE_ID
+deploy/vault/SECRET_ID
+# runtime artifacts
+*.pid
+.run/
+.vault-token
+/run/secrets/*

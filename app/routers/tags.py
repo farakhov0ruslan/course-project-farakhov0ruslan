@@ -2,6 +2,7 @@ from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
+from app.routers.notes import LOGGER
 from core.schemas import TagCreate, TagRead
 from infrastructure.db import session_scope
 from infrastructure.repositories.tags import TagsRepository
@@ -20,12 +21,15 @@ def list_tags(
     offset: int = Query(0, ge=0),
     repo: TagsRepository = Depends(get_repo),
 ):
-    return [TagRead.model_validate(t) for t in repo.list(limit=limit, offset=offset)]
+    rows = repo.list(limit=limit, offset=offset)
+    LOGGER.info("tags.listed", count=len(rows), limit=limit, offset=offset)
+    return [TagRead.model_validate(t) for t in rows]
 
 
 @router.post("/", response_model=TagRead, status_code=201)
 def create_tag(payload: TagCreate, repo: TagsRepository = Depends(get_repo)):
     tag = repo.create(payload.name.strip().lower())
+    LOGGER.info("tag.created", name=tag.name)
     return TagRead.model_validate(tag)
 
 
@@ -33,5 +37,7 @@ def create_tag(payload: TagCreate, repo: TagsRepository = Depends(get_repo)):
 def delete_tag(name: str, repo: TagsRepository = Depends(get_repo)):
     ok = repo.delete(name)
     if not ok:
+        LOGGER.warning("tag.not_found", tag=name)
         raise HTTPException(status_code=404, detail="Tag not found")
+    LOGGER.info("tag.deleted", name=name)
     return None

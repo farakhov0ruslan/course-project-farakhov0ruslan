@@ -1,11 +1,17 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
+from asgi_correlation_id import CorrelationIdMiddleware
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.responses import JSONResponse, Response
 
 from app.routers import notes as notes_api
 from app.routers import tags as tags_api
 from infrastructure.db import init_db
+from utils_library.logger import setup_logging
+
+setup_logging()
 
 
 @asynccontextmanager
@@ -16,59 +22,62 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Study Notes API", version="0.1.0", lifespan=lifespan)
 
-
 app.include_router(notes_api.router)
 app.include_router(tags_api.router)
+app.add_middleware(CorrelationIdMiddleware, header_name="X-Request-ID")  # noqa
 
 
-class ApiError(Exception):
-    def __init__(self, code: str, message: str, status: int = 400):
-        self.code = code
-        self.message = message
-        self.status = status
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(
+    request: Request, exc: StarletteHTTPException
+) -> Response:
+    # Problem Details (RFC 9457 совместим с 7807)
+    from asgi_correlation_id.context import correlation_id
+
+    body = {
+        "type": "about:blank",
+        "title": exc.detail if isinstance(exc.detail, str) else "HTTP Error",
+        "status": exc.status_code,
+        "detail": None if isinstance(exc.detail, str) else str(exc.detail),
+        "instance": str(request.url),
+        "correlation_id": correlation_id.get(),
+    }
+    return JSONResponse(status_code=exc.status_code, content=body)
 
 
-@app.exception_handler(ApiError)
-async def api_error_handler(request: Request, exc: ApiError):
-    return JSONResponse(
-        status_code=exc.status,
-        content={"error": {"code": exc.code, "message": exc.message}},
-    )
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(
+    request: Request, exc: RequestValidationError
+) -> Response:
+    from asgi_correlation_id.context import correlation_id
+
+    body = {
+        "type": "about:blank",
+        "title": "Unprocessable Entity",
+        "status": 422,
+        "detail": "Request validation failed",
+        "errors": exc.errors(),
+        "instance": str(request.url),
+        "correlation_id": correlation_id.get(),
+    }
+    return JSONResponse(status_code=422, content=body)
 
 
-@app.exception_handler(HTTPException)
-async def http_exception_handler(request: Request, exc: HTTPException):
-    # Normalize FastAPI HTTPException into our error envelope
-    detail = exc.detail if isinstance(exc.detail, str) else "http_error"
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={"error": {"code": "http_error", "message": detail}},
-    )
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception) -> Response:
+    from asgi_correlation_id.context import correlation_id
+
+    body = {
+        "type": "about:blank",
+        "title": "Internal Server Error",
+        "status": 500,
+        "detail": "Unexpected server error",
+        "instance": str(request.url),
+        "correlation_id": correlation_id.get(),
+    }
+    return JSONResponse(status_code=500, content=body)
 
 
 @app.get("/health")
 def health():
     return {"status": "ok"}
-
-
-# Example minimal entity (for tests/demo)
-_DB = {"items": []}
-
-
-@app.post("/items")
-def create_item(name: str):
-    if not name or len(name) > 100:
-        raise ApiError(
-            code="validation_error", message="name must be 1..100 chars", status=422
-        )
-    item = {"id": len(_DB["items"]) + 1, "name": name}
-    _DB["items"].append(item)
-    return item
-
-
-@app.get("/items/{item_id}")
-def get_item(item_id: int):
-    for it in _DB["items"]:
-        if it["id"] == item_id:
-            return it
-    raise ApiError(code="not_found", message="item not found", status=404)
