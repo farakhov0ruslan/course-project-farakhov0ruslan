@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from app.routers.notes import LOGGER
 from core.schemas import TagCreate, TagRead
 from infrastructure.db import session_scope
+from infrastructure.external.stackexchange_tags import fetch_popular_tags
 from infrastructure.repositories.tags import TagsRepository
 
 router = APIRouter(prefix="/tags", tags=["tags"])
@@ -41,3 +42,19 @@ def delete_tag(name: str, repo: TagsRepository = Depends(get_repo)):
         raise HTTPException(status_code=404, detail="Tag not found")
     LOGGER.info("tag.deleted", name=name)
     return None
+
+
+@router.post("/import/external", status_code=201)
+async def import_external_tags(
+    limit: int = Query(10, ge=1, le=100),
+    repo: TagsRepository = Depends(get_repo),
+):
+    names = await fetch_popular_tags(limit=limit)
+    created = 0
+    for n in names:
+        try:
+            await repo.create(n)
+            created += 1
+        except Exception:
+            pass
+    return {"imported": created, "source": "stackexchange", "requested": limit}

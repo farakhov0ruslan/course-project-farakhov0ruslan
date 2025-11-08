@@ -1,6 +1,9 @@
 # Build stage
 FROM python:3.11-slim AS build
 WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libmagic1 \
+    && rm -rf var/lib/apt/lists/*
 COPY requirements.txt requirements-dev.txt ./
 RUN pip install --no-cache-dir -r requirements.txt -r requirements-dev.txt
 COPY . .
@@ -9,6 +12,10 @@ RUN pytest -q
 # Runtime stage
 FROM python:3.11-slim
 WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libmagic1 \
+    curl \
+    && rm -rf var/lib/apt/lists/*
 RUN useradd -m appuser
 COPY --from=build /usr/local/lib/python3.11 /usr/local/lib/python3.11
 COPY --from=build /usr/local/bin /usr/local/bin

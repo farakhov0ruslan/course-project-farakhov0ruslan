@@ -6,6 +6,7 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.responses import JSONResponse, Response
 
+from app.routers import import_notes as import_api
 from app.routers import notes as notes_api
 from app.routers import tags as tags_api
 from infrastructure.db import init_db
@@ -24,6 +25,7 @@ app = FastAPI(title="Study Notes API", version="0.1.0", lifespan=lifespan)
 
 app.include_router(notes_api.router)
 app.include_router(tags_api.router)
+app.include_router(import_api.router)
 app.add_middleware(CorrelationIdMiddleware, header_name="X-Request-ID")  # noqa
 
 

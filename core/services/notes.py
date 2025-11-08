@@ -7,7 +7,7 @@ from core.models import Note, Tag
 
 def _get_or_create_tags(session: Session, tag_names: Iterable[str]) -> List[Tag]:
     result: List[Tag] = []
-    for name in {t.strip().lower() for t in tag_names if t.strip()}:
+    for name in tag_names:
         tag = session.exec(select(Tag).where(Tag.name == name)).first()
         if not tag:
             tag = Tag(name=name)
