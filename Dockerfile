@@ -5,19 +5,16 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 WORKDIR /app
 
-# hadolint ignore=DL3008
-# Не пиним версии системных пакетов, чтобы получать security-обновления.
 RUN apt-get update \
-    && apt-get install --no-install-recommends -y build-essential \
-    libmagic1 \
+    && apt-get install --no-install-recommends -y \
+       build-essential=12.9 \
+       libmagic1=1:5.44-3 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt requirements-dev.txt pyproject.toml ./
 
-# hadolint ignore=DL3013
-# Обновляем именно pip, поэтому не пиним его версию.
-RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
 
 #  runtime
 FROM python:3.11-slim AS runtime
@@ -34,8 +31,8 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # hadolint ignore=DL3008
 # Не пиним версии системных пакетов, чтобы получать security-обновления.
 RUN apt-get update \
-    && apt-get install --no-install-recommends -y build-essential \
-    libmagic1 \
+    && apt-get install --no-install-recommends -y \
+       libmagic1=1:5.44-3 \
     && rm -rf /var/lib/apt/lists/*
 
 
