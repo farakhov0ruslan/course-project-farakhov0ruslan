@@ -1,7 +1,7 @@
 sqlmodel
 sqlalchemy
 pydantic-settings
-fastapi>=0.116.2,<0.117.0
+fastapi==0.117.0
 uvicorn==0.30.5
 psycopg2-binary
 asgi-correlation-id
