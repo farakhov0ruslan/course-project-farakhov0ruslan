@@ -17,7 +17,7 @@ COPY requirements.txt requirements-dev.txt pyproject.toml ./
 # hadolint ignore=DL3013
 # Обновляем именно pip, поэтому не пиним его версию.
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -requirement requirements.txt
+    && pip install --no-cache-dir -r requirements.txt
 
 #  runtime
 FROM python:3.11-slim AS runtime
