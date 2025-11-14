@@ -7,8 +7,8 @@ WORKDIR /app
 
 RUN apt-get update \
     && apt-get install --no-install-recommends -y \
-       build-essential=12.9 \
-       libmagic1=1:5.44-3 \
+       build-essential=12.12 \
+       libmagic1=1:5.46-5 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt requirements-dev.txt pyproject.toml ./
@@ -32,7 +32,7 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Не пиним версии системных пакетов, чтобы получать security-обновления.
 RUN apt-get update \
     && apt-get install --no-install-recommends -y \
-       libmagic1=1:5.44-3 \
+       libmagic1=1:5.46-5 \
     && rm -rf /var/lib/apt/lists/*
 
 
