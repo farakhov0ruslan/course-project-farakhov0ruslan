@@ -6,3 +6,6 @@ uvicorn==0.30.5
 psycopg2-binary
 asgi-correlation-id
 structlog
+python-magic
+python-multipart==0.0.6
+libmagic

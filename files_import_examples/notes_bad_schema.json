@@ -1,0 +1,21 @@
+[
+  {
+    "title": "Extra field",
+    "body": "ok",
+    "tags": [
+      "x"
+    ],
+    "created_at": "2025-11-01T12:00:00Z",
+    "unknown": "!!!"
+  },
+  {
+    "title": 123,
+    "body": [
+      "not",
+      "a",
+      "string"
+    ],
+    "tags": "oops",
+    "created_at": true
+  }
+]

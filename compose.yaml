@@ -17,6 +17,7 @@ services:
       - "8000:8000"
     environment:
       - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
       - DATABASE_URL=postgresql+psycopg2://postgres:postgres@db:5432/notes
     depends_on:
       db:
