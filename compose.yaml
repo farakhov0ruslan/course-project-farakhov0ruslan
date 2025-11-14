@@ -1,25 +1,50 @@
 services:
   db:
     image: postgres:15
+    restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: notes
-    ports: [ "5432:5432" ]
+    ports:
+      - "5432:5432"
+    volumes:
+      - notes_db_data:/var/lib/postgresql/data
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
       timeout: 5s
       retries: 20
+    networks:
+      - notes_net
   app:
     build: .
+    container_name: notes-app
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      APP_ENV: docker
     ports:
       - "8000:8000"
-    environment:
-      - PYTHONUNBUFFERED=1
-      - PYTHONDONTWRITEBYTECODE=1
-      - DATABASE_URL=postgresql+psycopg2://postgres:postgres@db:5432/notes
     depends_on:
       db:
         condition: service_healthy
-    profiles: [ "dev" ]
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    profiles:
+      - dev
+    networks:
+      - notes_net
+
+networks:
+  notes_net:
+    driver: bridge
+
+volumes:
+  notes_db_data:

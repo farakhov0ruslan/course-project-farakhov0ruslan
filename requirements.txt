@@ -8,4 +8,4 @@ asgi-correlation-id
 structlog
 python-magic
 python-multipart==0.0.6
-libmagic
+httpx
