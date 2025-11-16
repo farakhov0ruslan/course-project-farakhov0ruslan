@@ -1,17 +1,29 @@
+# Git и IDE
 .git
 .gitignore
-.gitattributes
-__pycache__/
-*.pyc
+.idea
+.vscode
+
+# Виртуальные окружения и кэш
+.venv
+venv
+__pycache__
+*.py[cod]
 *.pyo
 *.pyd
+.pytest_cache
+.mypy_cache
+.ruff_cache
+
+*.log
+*.tmp
+*.swp
+
+# Локальные БД/файлы окружения
+app.db
 *.sqlite
-*.db
-.venv/
-dist/
-build/
-.pytest_cache/
-.coverage
-htmlcov/
-node_modules/
 .env
+.env.*
+
+# Прочие артефакты
+sbom.cdx.json
