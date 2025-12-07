@@ -27,6 +27,7 @@ async def import_notes(
     if fmt == "json":
         for obj in parse_json_array(mem):
             try:
+
                 items.append(NoteCreate(**obj))
             except Exception as e:
                 raise HTTPException(status_code=400, detail=f"Invalid item: {e}") from e
