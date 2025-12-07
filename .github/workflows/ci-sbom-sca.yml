@@ -1,0 +1,117 @@
+name: Security - SBOM & SCA
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "**/*.py"
+      - "requirements*.txt"
+      - ".github/workflows/ci-sbom-sca.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sbom_sca:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+
+      - name: Install SCA & SBOM tooling
+        run: pip install pip-audit safety cyclonedx-bom
+
+      - name: Ensure evidence dirs
+        run: mkdir -p EVIDENCE/P09
+
+      - name: Freeze environment
+        run: pip freeze | sort > requirements.lock.txt
+
+      - name: Generate SBOM (CycloneDX JSON)
+        run: |
+          python -m cyclonedx_py environment \
+            -o EVIDENCE/P09/sbom.json \
+            --output-format json
+
+      - name: SCA Scan (pip-audit)
+        continue-on-error: true
+        run: |
+          pip-audit -r requirements.lock.txt -f json -o EVIDENCE/P09/sca_report.json || true
+
+      - name: Generate SCA summary
+        run: |
+          python - <<'PY'
+          import json, os
+
+          sev_order = {"LOW": 1, "MEDIUM": 2, "HIGH": 3, "CRITICAL": 4}
+          vulnerabilities = []
+
+          try:
+              with open("EVIDENCE/P09/sca_report.json", "r", encoding="utf-8") as f:
+                  data = json.load(f)
+
+              for pkg in data:
+                  for vul in pkg.get("vulns", []):
+                      severity = (vul.get("severity") or "").upper()
+                      vulnerabilities.append({
+                          "package": pkg.get("name"),
+                          "severity": severity,
+                          "id": vul.get("id"),
+                          "order": sev_order.get(severity, 0)
+                      })
+          except Exception as e:
+              print(f"Error parsing SCA report: {e}")
+
+          # Count by severity
+          counts = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0}
+          for v in vulnerabilities:
+              if v["severity"] in counts:
+                  counts[v["severity"]] += 1
+
+          # Write summary
+          with open("EVIDENCE/P09/sca_summary.md", "w", encoding="utf-8") as f:
+              f.write("# SCA Summary\n\n")
+              f.write("## Vulnerability Count by Severity\n\n")
+              f.write(f"- **Critical**: {counts['CRITICAL']}\n")
+              f.write(f"- **High**: {counts['HIGH']}\n")
+              f.write(f"- **Medium**: {counts['MEDIUM']}\n")
+              f.write(f"- **Low**: {counts['LOW']}\n")
+              f.write(f"\n**Total**: {len(vulnerabilities)}\n\n")
+
+              # List High/Critical
+              high_crit = [v for v in vulnerabilities if v["order"] >= 3]
+              if high_crit:
+                  f.write("## High/Critical Vulnerabilities\n\n")
+                  for v in sorted(high_crit, key=lambda x: -x["order"]):
+                      f.write(f"- **{v['package']}**: {v['severity']} — {v['id']}\n")
+              else:
+                  f.write("## No High/Critical vulnerabilities found\n")
+
+          print(f"Total vulnerabilities: {len(vulnerabilities)}")
+          print(f"High/Critical: {len(high_crit)}")
+          PY
+
+      - name: Upload SBOM/SCA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: P09_EVIDENCE
+          path: EVIDENCE/P09
