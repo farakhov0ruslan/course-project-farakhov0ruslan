@@ -34,7 +34,7 @@ jobs:
 
       - name: Hadolint Dockerfile
         run: |
-          docker run --rm -v $PWD:/work hadolint/hadolint \
+          docker run --rm -v $PWD:/work hadolint/hadolint  \
             hadolint --config /work/security/hadolint.yaml \
               -f json /work/Dockerfile > EVIDENCE/P12/hadolint_report.json || true
 
