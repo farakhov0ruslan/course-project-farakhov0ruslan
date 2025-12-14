@@ -41,17 +41,22 @@ jobs:
       - name: Checkov IaC scan
         run: |
           docker run --rm -v $PWD:/work bridgecrew/checkov \
-            --config-file /work/security/checkov.yaml \
+            --framework dockerfile \
+            --framework docker-compose \
             --directory /work \
             --file /work/compose.yaml \
             --file /work/Dockerfile \
             --output json \
             --compact > EVIDENCE/P12/checkov_report.json || true
 
+      - name: Save Docker image
+        run: |
+          docker save notes-app:local -o notes-app.tar
+
       - name: Trivy image scan
         run: |
           docker run --rm -v $PWD:/work aquasec/trivy \
-            image notes-app:local \
+            image --input /work/notes-app.tar \
               --format json \
               --severity CRITICAL,HIGH,MEDIUM \
               --output /work/EVIDENCE/P12/trivy_report.json || true
