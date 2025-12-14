@@ -7,7 +7,7 @@ on:
       - "Dockerfile"
       - "compose.yaml"
       - "security/**"
-      - ".github/workflows/ci-p12-iac-container.yml"
+      - ".github/workflows/ci-iac-container.yml"
 
 permissions:
   contents: read
