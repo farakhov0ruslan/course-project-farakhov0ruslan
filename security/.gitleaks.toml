@@ -1,0 +1,44 @@
+# Gitleaks configuration for Study Notes API project
+# Detects hardcoded secrets and sensitive data in the codebase
+
+title = "Study Notes API - Gitleaks config"
+
+[extend]
+# Use built-in default rules
+useDefault = true
+
+[allowlist]
+description = "Ignore non-sensitive patterns and test data"
+
+# Paths to ignore
+paths = [
+  '''EVIDENCE/''',              # Evidence and artifacts directory
+  '''\.git/''',                 # Git internal directory
+  '''\.github/workflows/''',    # GitHub Actions workflows (may contain example tokens)
+  '''requirements.*\.txt''',    # Dependencies files
+  '''\.lock''',                 # Lock files
+]
+
+# Commits to ignore (if needed)
+commits = []
+
+# Regex patterns to allowlist (false positives)
+regexes = [
+  '''TEST_SECRET_DO_NOT_USE''',                          # Test secrets
+  '''example[_-]?(key|token|secret|password)''',         # Example/placeholder values
+  '''your[_-]?(api[_-]?key|token|secret)''',            # Documentation placeholders
+  '''<YOUR_.*>''',                                       # Placeholder format
+  '''xxx+''',                                            # Masked/placeholder values
+  '''(?i)(dummy|fake|mock)[_-]?(key|token|secret)''',   # Test/mock data
+]
+
+# Additional custom rules (if needed)
+[[rules]]
+id = "generic-api-key-custom"
+description = "Custom rule for API keys"
+regex = '''(?i)(api[_-]?key|apikey)\s*[:=]\s*['"][a-zA-Z0-9]{32,}['"]'''
+[rules.allowlist]
+  regexes = [
+    '''(?i)example''',
+    '''(?i)test''',
+  ]

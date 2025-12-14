@@ -1,0 +1,60 @@
+# Custom Semgrep rules for Study Notes API project
+# These rules complement the base p/ci profile
+
+rules:
+  - id: py-unsafe-html-echo
+    languages: [ python ]
+    message: "Potentially unsafe user data output in HTMLResponse - risk of XSS"
+    severity: WARNING
+    patterns:
+      - pattern: |
+          HTMLResponse(f"...{$X}...")
+    metadata:
+      category: security
+      cwe: "CWE-79: Cross-site Scripting (XSS)"
+      confidence: MEDIUM
+
+  - id: fastapi-no-input-validation
+    languages: [ python ]
+    message: "FastAPI endpoint accepts input without Pydantic model validation"
+    severity: INFO
+    patterns:
+      - pattern-either:
+          - pattern: |
+              @$APP.$METHOD(...)
+              def $FUNC(..., $PARAM: str, ...):
+                ...
+          - pattern: |
+              @$APP.$METHOD(...)
+              def $FUNC(..., $PARAM: dict, ...):
+                ...
+    metadata:
+      category: security
+      cwe: "CWE-20: Improper Input Validation"
+      confidence: LOW
+
+  - id: sqlalchemy-raw-sql-injection
+    languages: [ python ]
+    message: "Potential SQL injection with raw SQL query - use parameterized queries"
+    severity: ERROR
+    patterns:
+      - pattern-either:
+          - pattern: session.execute(f"...")
+          - pattern: session.execute("..." + ...)
+          - pattern: engine.execute(f"...")
+    metadata:
+      category: security
+      cwe: "CWE-89: SQL Injection"
+      confidence: HIGH
+
+  - id: hardcoded-secret-pattern
+    languages: [ python ]
+    message: "Possible hardcoded secret or API key detected"
+    severity: WARNING
+    patterns:
+      - pattern-regex: |
+          (password|secret|api_key|token)\s*=\s*["'][^"']{8,}["']
+    metadata:
+      category: security
+      cwe: "CWE-798: Use of Hard-coded Credentials"
+      confidence: MEDIUM
