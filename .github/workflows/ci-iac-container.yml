@@ -1,0 +1,67 @@
+name: Security - IaC & Container (P12)
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "Dockerfile"
+      - "compose.yaml"
+      - "security/**"
+      - ".github/workflows/ci-iac-container.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  iac_container:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure evidence dirs
+        run: mkdir -p EVIDENCE/P12
+
+      - name: Build image
+        run: |
+          docker build -t notes-app:local .
+
+      - name: Hadolint Dockerfile
+        run: |
+          docker run --rm -v $PWD:/work hadolint/hadolint  \
+            hadolint --config /work/security/hadolint.yaml \
+              -f json /work/Dockerfile > EVIDENCE/P12/hadolint_report.json || true
+
+      - name: Checkov IaC scan
+        run: |
+          docker run --rm -v $PWD:/work bridgecrew/checkov \
+            --framework dockerfile \
+            --file /work/compose.yaml \
+            --file /work/Dockerfile \
+            --output json \
+            --compact > EVIDENCE/P12/checkov_report.json || true
+
+      - name: Save Docker image
+        run: |
+          docker save notes-app:local -o notes-app.tar
+
+      - name: Trivy image scan
+        run: |
+          docker run --rm -v $PWD:/work aquasec/trivy \
+            image --input /work/notes-app.tar \
+              --format json \
+              --severity CRITICAL,HIGH,MEDIUM \
+              --output /work/EVIDENCE/P12/trivy_report.json || true
+
+      - name: Upload P12 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: P12_EVIDENCE
+          path: EVIDENCE/P12
