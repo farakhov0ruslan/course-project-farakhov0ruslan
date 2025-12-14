@@ -42,8 +42,6 @@ jobs:
         run: |
           docker run --rm -v $PWD:/work bridgecrew/checkov \
             --framework dockerfile \
-            --framework docker-compose \
-            --directory /work \
             --file /work/compose.yaml \
             --file /work/Dockerfile \
             --output json \
