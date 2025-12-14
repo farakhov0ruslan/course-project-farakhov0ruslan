@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  dast_p11:
+  dast:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -43,13 +43,13 @@ jobs:
 
       - name: ZAP Baseline
         run: |
-          docker run --rm --network host -v $PWD:/zap/wrk zaproxy/zap-stable \
+          chmod 777 EVIDENCE/P11
+          docker run --rm --network host -v $PWD/EVIDENCE/P11:/zap/wrk:rw zaproxy/zap-stable \
             zap-baseline.py \
-              -t http://localhost:8000 \
+              -t http://localhost:8000/ \
               -r zap_baseline.html \
               -J zap_baseline.json \
-              -d || true
-          mv zap_baseline.* EVIDENCE/P11/ || true
+              -I || true
 
       - name: Upload P11 evidence
         if: always()
